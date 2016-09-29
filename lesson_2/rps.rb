@@ -1,3 +1,4 @@
+# Rock Paper Scissors Game
 # Player class
 class Player
   attr_accessor :move, :name
