@@ -125,8 +125,8 @@ class RPSGame
     puts "#{computer.name}'s score is #{computer.score}"
   end
 
-  def number_of_games
-    return true if human.score == 5 || computer.score == 5
+  def number_of_games(num)
+    return true if human.score == num || computer.score == num
   end
 
   def display_final_outcome
@@ -162,7 +162,7 @@ class RPSGame
         display_moves
         display_winner
         display_score
-        break if number_of_games
+        break if number_of_games(5)
       end
       display_final_outcome
       human.reset_score
