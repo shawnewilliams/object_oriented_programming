@@ -38,14 +38,14 @@ end
 # Human Class
 class Human < Player
   def set_name
-    n = ''
+    entry = ''
     loop do
       puts 'Please enter your name.'
-      n = gets.chomp
-      break if n != ''
+      entry = gets.chomp
+      break if entry.strip != ''
       puts "How do I know who you are if you don't tell me."
     end
-    self.name = n
+    self.name = entry
   end
 
   def choose
@@ -67,6 +67,10 @@ class Computer < Player
     self.name = ['R2D2', 'Hal', 'Chappie', 'Sonny', 'Number 5'].sample
   end
 
+  # rubocop:disable AbcSize
+  # rubocop:disable MethodLength
+  # rubocop:disable CyclomaticComplexity
+  # rubocop:disable PerceivedComplexity
   def learn(human_history, computer, count)
     if computer.win_history['rock'] / count.to_f > 0.6
       computer.choice = Move::VALUES_R.sample
@@ -84,6 +88,10 @@ class Computer < Player
       computer.choice = Move::VALUES.values.sample
     end
   end
+  # rubocop:enable AbcSize
+  # rubocop:enable MethodLength
+  # rubocop:enable CyclomaticComplexity
+  # rubocop:enable PerceivedComplexity
 
   def choose(human)
     @choice = ''
@@ -118,16 +126,16 @@ class Move
     @value == 'scissors'
   end
 
-  def >(other_move)
-    (rock? && other_move.scissors?) ||
-      (paper? && other_move.rock?) ||
-      (scissors? && other_move.paper?)
+  def >(other)
+    (rock? && other.scissors?) ||
+      (paper? && other.rock?) ||
+      (scissors? && other.paper?)
   end
 
-  def <(other_move)
-    (rock? && other_move.paper?) ||
-      (paper? && other_move.scissors?) ||
-      (scissors? && other_move.rock?)
+  def <(other)
+    (rock? && other.paper?) ||
+      (paper? && other.scissors?) ||
+      (scissors? && other.rock?)
   end
 
   def to_s
@@ -168,6 +176,7 @@ class RPSGame
     puts "#{computer.name} chose #{computer.choice}."
   end
 
+  # rubocop:disable AbcSize
   def display_winner
     if human.move > computer.move
       puts "#{human.name} wins this round!"
@@ -187,16 +196,18 @@ class RPSGame
       computer.increment_win_history(computer.choice)
     end
   end
+  # rubocop:enable AbcSize
 
   def display_score
     puts "#{human.name}'s score is: #{human.score}"
     puts "#{computer.name}'s score is #{computer.score}"
   end
 
-  def number_of_games(num)
+  def first_to_score?(num)
     return true if human.score == num || computer.score == num
   end
 
+  # rubocop:disable AbcSize
   def display_final_outcome
     if human.score > computer.score
       puts "#{human.name} WINS the game!"
@@ -204,6 +215,7 @@ class RPSGame
       puts "#{computer.name} WINS the game!"
     end
   end
+  # rubocop:enable AbcSize
 
   def reset_game
     human.reset_score
@@ -231,9 +243,12 @@ class RPSGame
     puts 'Thanks for playing Rock, Paper, Scissors. Good bye!'
   end
 
+  # rubocop:disable AbcSize
+  # rubocop:disable MethodLength
   def play
     display_welcome_message
     loop do
+      number_of_games = 0
       loop do
         computer.choose(@human)
         human.choose
@@ -243,8 +258,9 @@ class RPSGame
         display_winner
         display_score
         update_win_history
+        number_of_games += 1
         puts
-        break if number_of_games(10)
+        break if first_to_score?(10)
       end
       display_final_outcome
       reset_game
@@ -252,6 +268,8 @@ class RPSGame
     end
     display_goodbye_message
   end
+  # rubocop:enable AbcSize
+  # rubocop:enable MethodLength
 end
 
 RPSGame.new.play
