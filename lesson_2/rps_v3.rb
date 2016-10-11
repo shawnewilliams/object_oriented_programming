@@ -7,7 +7,8 @@ class Player
     set_name
     @score = 0
     @move_history = []
-    @win_history = { 'rock' => 0, 'paper' => 0, 'scissors' => 0 }
+    @win_history = { 'rock' => 0, 'paper' => 0, 'scissors' => 0,
+                     'lizard' => 0, 'spock' => 0 }
   end
 
   def increment_score
@@ -31,7 +32,8 @@ class Player
   end
 
   def reset_win_history
-    @win_history = { 'rock' => 0, 'paper' => 0, 'scissors' => 0 }
+    @win_history = { 'rock' => 0, 'paper' => 0, 'scissors' => 0,
+                     'lizard' => 0, 'spock' => 0 }
   end
 end
 
@@ -50,7 +52,7 @@ class Human < Player
 
   def choose
     loop do
-      puts 'Please choose rock (r), paper (p), or scissors (s):'
+      puts 'Please choose rock (r), paper (p), or scissors (s), lizard (l), or spock (sp):'
       @choice = gets.chomp.downcase
       break if Move::VALUES.keys.include?(choice)
       puts "That's not a valid choice."
@@ -78,12 +80,21 @@ class Computer < Player
       computer.choice = Move::VALUES_P.sample
     elsif computer.win_history['scissors'] / count.to_f > 0.6
       computer.choice = Move::VALUES_S.sample
-    elsif human_history.count('rock') / count.to_f > 0.6 && count > 4
-      computer.choice = Move::VALUES_P.sample
-    elsif human_history.count('paper') / count.to_f > 0.6 && count > 4
+    elsif computer.win_history['lizard'] / count.to_f > 0.6
       computer.choice = Move::VALUES_S.sample
+    elsif computer.win_history['spock'] / count.to_f > 0.6
+      computer.choice = Move::VALUES_SP.sample
+
+    elsif human_history.count('rock') / count.to_f > 0.6 && count > 4
+      computer.choice = (Move::VALUES_P + Move::VALUES_SP).sample
+    elsif human_history.count('paper') / count.to_f > 0.6 && count > 4
+      computer.choice = (Move::VALUES_S + Move::VALUES_L).sample
     elsif human_history.count('scissors') / count.to_f > 0.6 && count > 4
-      computer.choice = Move::VALUES_R.sample
+      computer.choice = (Move::VALUES_R + Move::VALUES_SP).sample
+    elsif human_history.count('lizard') / count.to_f > 0.6 && count > 4
+      computer.choice = (Move::VALUES_S + Move::VALUES_R).sample
+    elsif human_history.count('spock') / count.to_f > 0.6 && count > 4
+      computer.choice = (Move::VALUES_L + Move::VALUES_P).sample
     else
       computer.choice = Move::VALUES.values.sample
     end
@@ -103,10 +114,18 @@ end
 
 # Move class
 class Move
-  VALUES = { 'r' => 'rock', 'p' => 'paper', 's' => 'scissors' }.freeze
-  VALUES_R = %w(rock rock rock rock paper scissors).freeze
-  VALUES_P = %w(rock paper paper paper paper scissors).freeze
-  VALUES_S = %w(rock paper scissors scissors scissors scissors).freeze
+  VALUES = { 'r' => 'rock', 'p' => 'paper', 's' => 'scissors',
+             'l' => 'lizard', 'sp' => 'spock' }.freeze
+  VALUES_R = %w(rock rock rock rock rock
+                paper scissors lizard spock).freeze
+  VALUES_P = %w(rock paper paper paper paper
+                paper scissors lizard spock).freeze
+  VALUES_S = %w(rock paper scissors scissors scissors
+                scissors scissors lizard spock).freeze
+  VALUES_L = %w(rock paper scissors lizard lizard
+                lizard lizard lizard spock).freeze
+  VALUES_SP = %w(rock paper scissors lizard spock
+                 spock spock spock spock).freeze
 
   attr_accessor :value, :game_count
 
@@ -126,17 +145,45 @@ class Move
     @value == 'scissors'
   end
 
+  def lizard?
+    @value == 'lizard'
+  end
+
+  def spock?
+    @value == 'spock'
+  end
+
+  # rubocop:disable AbcSize
+  # rubocop:disable CyclomaticComplexity
+  # rubocop:disable PerceivedComplexity
   def >(other)
     (rock? && other.scissors?) ||
+      (rock? && other.lizard?) ||
       (paper? && other.rock?) ||
-      (scissors? && other.paper?)
+      (paper? && other.spock?) ||
+      (scissors? && other.paper?) ||
+      (scissors? && other.lizard?) ||
+      (lizard? && other.paper?) ||
+      (lizard? && other.spock?) ||
+      (spock? && other.rock?) ||
+      (spock? && other.scissors?)
   end
 
   def <(other)
     (rock? && other.paper?) ||
+      (rock? && other.spock?) ||
       (paper? && other.scissors?) ||
-      (scissors? && other.rock?)
+      (paper? && other.lizard?) ||
+      (scissors? && other.rock?) ||
+      (scissors? && other.spock?) ||
+      (lizard? && other.rock?) ||
+      (lizard? && other.scissors?) ||
+      (spock? && other.paper?) ||
+      (spock? && other.lizard?)
   end
+  # rubocop:enable AbcSize
+  # rubocop:enable CyclomaticComplexity
+  # rubocop:enable PerceivedComplexity
 
   def to_s
     @value
@@ -144,6 +191,7 @@ class Move
 end
 
 # RPSGame class
+# rubocop:disable ClassLength
 class RPSGame
   attr_accessor :human, :computer
 
@@ -177,17 +225,62 @@ class RPSGame
   end
 
   # rubocop:disable AbcSize
+  # rubocop:disable MethodLength
+  # rubocop:disable CyclomaticComplexity
+  # rubocop:disable PerceivedComplexity
+  def display_what_beats_what
+    if human.choice == 'rock' && computer.choice == 'scissors' ||
+       human.choice == 'scissors' && computer.choice == 'rock'
+      puts 'Rock crushes scissors!'
+    elsif human.choice == 'rock' && computer.choice == 'lizard' ||
+          human.choice == 'lizard' && computer.choice == 'rock'
+      puts 'Rock crushes lizard!'
+    elsif human.choice == 'paper' && computer.choice == 'rock' ||
+          human.choice == 'rock' && computer.choice == 'paper'
+      puts 'Paper covers rock!'
+    elsif human.choice == 'paper' && computer.choice == 'spock' ||
+          human.choice == 'spock' && computer.choice == 'paper'
+      puts 'Paper disproves Spock!'
+    elsif human.choice == 'scissors' && computer.choice == 'paper' ||
+          human.choice == 'paper' && computer.choice == 'scissors'
+      puts 'Scissors cut paper!'
+    elsif human.choice == 'scissors' && computer.choice == 'lizard' ||
+          human.choice == 'sizard' && computer.choice == 'scissors'
+      puts 'Scissors decapitates lizard!'
+    elsif human.choice == 'lizard' && computer.choice == 'spock' ||
+          human.choice == 'spock' && computer.choice == 'lizard'
+      puts 'Lizard poisons Spock!'
+    elsif human.choice == 'lizard' && computer.choice == 'paper' ||
+          human.choice == 'paper' && computer.choice == 'lizard'
+      puts 'Lizard eats paper!'
+    elsif human.choice == 'spock' && computer.choice == 'rock' ||
+          human.choice == 'rock' && computer.choice == 'spock'
+      puts 'Spock vaporizes rock!'
+    elsif human.choice == 'spock' && computer.choice == 'scissors' ||
+          human.choice == 'scissors' && computer.choice == 'spock'
+      puts 'Spock smashes scissors!'
+    end
+  end
+
   def display_winner
     if human.move > computer.move
+      display_what_beats_what
       puts "#{human.name} wins this round!"
+      puts
       human.increment_score
     elsif human.move < computer.move
+      display_what_beats_what
       puts "#{computer.name} wins this round."
+      puts
       computer.increment_score
     else
       puts "It's a tie."
+      puts
     end
   end
+  # rubocop:enable MethodLength
+  # rubocop:enable CyclomaticComplexity
+  # rubocop:enable PerceivedComplexity
 
   def update_win_history
     if human.move > computer.move
@@ -196,7 +289,6 @@ class RPSGame
       computer.increment_win_history(computer.choice)
     end
   end
-  # rubocop:enable AbcSize
 
   def display_score
     puts "#{human.name}'s score is: #{human.score}"
@@ -207,7 +299,6 @@ class RPSGame
     return true if human.score == num || computer.score == num
   end
 
-  # rubocop:disable AbcSize
   def display_final_outcome
     if human.score > computer.score
       puts "#{human.name} WINS the game!"
@@ -271,5 +362,6 @@ class RPSGame
   # rubocop:enable AbcSize
   # rubocop:enable MethodLength
 end
+# rubocop:enable ClassLength
 
 RPSGame.new.play
