@@ -75,9 +75,6 @@ end
 
 # Catamaran Class
 class Catamaran < Seacraft
-  def initialize(num_propellers, num_hulls, km_traveled_per_liter, liters_of_fuel_capacity)
-    super(num_propellers, num_hulls, km_traveled_per_liter, liters_of_fuel_capacity)
-  end
 end
 
 # Motorboat class
