@@ -1,8 +1,8 @@
-# Vehicle Module
+# Moveable Module
 module Moveable
   attr_accessor :speed, :heading
   attr_writer :fuel_capacity, :fuel_efficiency
-  
+
   def range
     "This vehicle can travel a range of #{@fuel_capacity * @fuel_efficiency} kilometers"
   end
