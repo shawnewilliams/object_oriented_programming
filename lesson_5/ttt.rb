@@ -10,6 +10,7 @@ class Board
     reset
   end
 
+  # rubocop:disable Metrics/AbcSize
   def draw
     puts "     |     |"
     puts "  #{@squares[1]}  |  #{@squares[2]}  |  #{@squares[3]}"
@@ -23,6 +24,7 @@ class Board
     puts "  #{@squares[7]}  |  #{@squares[8]}  |  #{@squares[9]}"
     puts "     |     |"
   end
+  # rubocop:enable Metrics/AbcSize
 
   def []=(key, marker)
     @squares[key].marker = marker
@@ -90,6 +92,7 @@ end
 # Player Class
 class Player
   attr_reader :marker
+
   def initialize(marker)
     @marker = marker
   end
