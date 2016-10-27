@@ -19,17 +19,17 @@ class Board
 
   # rubocop:disable Metrics/AbcSize
   def draw
-    puts "     |     |"
+    puts '     |     |'
     puts "  #{@squares[1]}  |  #{@squares[2]}  |  #{@squares[3]}"
-    puts "     |     |"
-    puts "-----+-----+-----"
-    puts "     |     |"
+    puts '     |     |'
+    puts '-----+-----+-----'
+    puts '     |     |'
     puts "  #{@squares[4]}  |  #{@squares[5]}  |  #{@squares[6]}"
-    puts "     |     |"
-    puts "-----+-----+-----"
-    puts "     |     |"
+    puts '     |     |'
+    puts '-----+-----+-----'
+    puts '     |     |'
     puts "  #{@squares[7]}  |  #{@squares[8]}  |  #{@squares[9]}"
-    puts "     |     |"
+    puts '     |     |'
   end
   # rubocop:enable Metrics/AbcSize
 
@@ -184,13 +184,13 @@ class TTTGame
           clear_screen_and_display_board if human_turn?
         end
         increment_score
-        display_result
+        display_round_winner
         display_score
         break if num_of_wins?
         pause_for_input
         reset_round
       end # End to 5 loop
-      display_winner
+      display_game_winner
       break unless play_again?
       reset_game
       display_play_again_message
@@ -226,11 +226,11 @@ class TTTGame
       break if AVAILABLE_MARKERS.include?(human.marker)
       puts "Than's not a valid choice. Pleas put X or O."
     end
-    case computer.marker
-    when human.marker == 'X'
-      'O'
+    case human.marker
+    when 'X'
+      computer.marker = 'O'
     else
-      'X'
+      computer.marker = 'X'
     end
   end
 
@@ -272,9 +272,13 @@ class TTTGame
     end
   end
 
-  def display_result
+  def round_winner
+    board.winning_marker
+  end
+
+  def display_round_winner
     clear_screen_and_display_board
-    case board.winning_marker
+    case round_winner
     when human.marker
       puts "#{human.name} won this round!"
     when computer.marker
@@ -284,7 +288,7 @@ class TTTGame
     end
   end
 
-  def display_winner
+  def display_game_winner
     if human.score == PLAY_TO
       puts
       puts "#{human.name} won the game!"
@@ -319,9 +323,9 @@ class TTTGame
   end
 
   def winner_goes_first
-    if board.winning_marker == human.marker
+    if round_winner == human.marker
       @current_marker = human.marker
-    elsif board.winning_marker == computer.marker
+    elsif round_winner == computer.marker
       @current_marker = computer.marker
     else
       change_current_marker
