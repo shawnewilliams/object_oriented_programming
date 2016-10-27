@@ -1,4 +1,3 @@
-require 'pry'
 # Joinable Module
 module Joinable
   def joinor(array, delimiter = ', ', word = 'or')
@@ -181,7 +180,6 @@ class TTTGame
         display_board
         loop do
           current_player_moves
-          # binding.pry
           break if board.someone_won? || board.full?
           clear_screen_and_display_board if human_turn?
         end
@@ -321,7 +319,6 @@ class TTTGame
   end
 
   def winner_goes_first
-    # binding.pry
     if board.winning_marker == human.marker
       @current_marker = human.marker
     elsif board.winning_marker == computer.marker
