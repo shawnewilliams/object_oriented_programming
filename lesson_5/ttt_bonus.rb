@@ -18,6 +18,7 @@ class Board
   end
 
   # rubocop:disable Metrics/AbcSize
+  # rubocop:disable Metrics/MethodLength
   def draw
     puts '     |     |'
     puts "  #{@squares[1]}  |  #{@squares[2]}  |  #{@squares[3]}"
@@ -32,6 +33,7 @@ class Board
     puts '     |     |'
   end
   # rubocop:enable Metrics/AbcSize
+  # rubocop:enable Metrics/MethodLength
 
   def []=(key, marker)
     @squares[key].marker = marker
@@ -46,7 +48,7 @@ class Board
   end
 
   def someone_won?
-    !!winning_marker
+    winning_marker
   end
 
   # returns winning marker or nil
@@ -58,30 +60,30 @@ class Board
     nil
   end
 
+  # rubocop:disable Metrics/MethodLength
   def at_risk_marker_and_square
     # Returns a hash with the at risk marker and square
     at_risk_marker = {}
     WINNING_LINES.each do |line|
       square = @squares.values_at(*line)
-      if at_risk(square)
-        key = square.select(&:marked?).collect(&:marker).uniq.join
-        value = nil
-        line.each do |sq|
-          value = sq if @squares[sq].unmarked?
-        end
-        at_risk_marker[key] = value
+      next unless at_risk(square)
+      key = square.select(&:marked?).collect(&:marker).uniq.join
+      value = nil
+      line.each do |sq|
+        value = sq if @squares[sq].unmarked?
       end
+      at_risk_marker[key] = value
     end
     at_risk_marker
   end
+  # rubocop:enable Metrics/MethodLength
 
   def at_risk_squares
     WINNING_LINES.each do |line|
       square = @squares.values_at(*line)
-      if at_risk(square)
-        line.each do |sq|
-          return sq if @squares[sq].unmarked?
-        end
+      next unless at_risk(square)
+      line.each do |sq|
+        return sq if @squares[sq].unmarked?
       end
     end
     nil
@@ -149,6 +151,7 @@ class Player
 end
 
 # TTTGame Class
+# rubocop:disable Metrics/ClassLength
 class TTTGame
   AVAILABLE_MARKERS = %w(X O).freeze
   X_MARKER = 'X'.freeze
@@ -168,6 +171,8 @@ class TTTGame
     @current_marker = FIRST_TO_MOVE
   end
 
+  # rubocop:disable Metrics/MethodLength
+  # rubocop:disable Metrics/AbcSize
   def play
     clear
     display_welcome_message
@@ -197,6 +202,8 @@ class TTTGame
     end # End play again loop
     display_goodbye_message
   end
+  # rubocop:enable Metrics/MethodLength
+  # rubocop:enable Metrics/AbcSize
 
   private
 
@@ -219,6 +226,7 @@ class TTTGame
     computer.name = ['R2D2', 'Hal', 'Chappie', 'Sonny', 'Number 5'].sample
   end
 
+  # rubocop:disable Metrics/MethodLength
   def choose_marker
     loop do
       puts 'Would you like to be X or O? X goes first.'
@@ -233,19 +241,23 @@ class TTTGame
       computer.marker = 'X'
     end
   end
+  # rubocop:enable Metrics/MethodLength
 
+  # rubocop:disable Metrics/LineLength
   def display_board
     puts "#{human.name}: #{human.marker} -- #{computer.name}: #{computer.marker}"
     puts
     board.draw
     puts
   end
+  # rubocop:enable Metrics/LineLength
 
   def clear_screen_and_display_board
     clear
     display_board
   end
 
+  # rubocop:disable Metrics/AbcSize
   def human_moves
     puts "Choose a square #{joinor(board.unmarked_keys)}: "
     square = nil
@@ -271,6 +283,7 @@ class TTTGame
       board[board.unmarked_keys.sample] = computer.marker
     end
   end
+  # rubocop:enable Metrics/AbcSize
 
   def round_winner
     board.winning_marker
@@ -288,6 +301,7 @@ class TTTGame
     end
   end
 
+  # rubocop:disable Metrics/AbcSize
   def display_game_winner
     if human.score == PLAY_TO
       puts
@@ -299,6 +313,7 @@ class TTTGame
       puts
     end
   end
+  # rubocop:enable Metrics/AbcSize
 
   def increment_score
     case board.winning_marker
@@ -395,6 +410,7 @@ class TTTGame
     @current_marker == human.marker
   end
 end
+# rubocop:enable Metrics/ClassLength
 
 # Start the game
 
