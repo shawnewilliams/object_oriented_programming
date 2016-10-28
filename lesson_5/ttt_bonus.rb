@@ -226,7 +226,7 @@ class TTTGame
     computer.name = ['R2D2', 'Hal', 'Chappie', 'Sonny', 'Number 5'].sample
   end
 
-  # rubocop:disable Metrics/MethodLength
+  # rubocop:disable Metrics/AbcSize
   def choose_marker
     loop do
       puts 'Would you like to be X or O? X goes first.'
@@ -234,14 +234,10 @@ class TTTGame
       break if AVAILABLE_MARKERS.include?(human.marker)
       puts "Than's not a valid choice. Pleas put X or O."
     end
-    case human.marker
-    when 'X'
-      computer.marker = 'O'
-    else
-      computer.marker = 'X'
-    end
+    computer.marker = 'O' if human.marker == 'X'
+    computer.marker = 'X' if human.marker == 'O'
   end
-  # rubocop:enable Metrics/MethodLength
+  # rubocop:enable Metrics/AbcSize
 
   # rubocop:disable Metrics/LineLength
   def display_board
