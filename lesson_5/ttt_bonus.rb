@@ -6,6 +6,84 @@ module Joinable
   end
 end
 
+# TTT_Displayable Module
+module TTTDisplayable
+  def display_welcome_message
+    puts 'Welcome to Tic Tac Toe!'
+    puts
+  end
+
+  def display_rules
+    puts 'Rules:'
+    puts 'X starts by going first.'
+    puts 'The winner goes first the following round.'
+    puts 'In the event of a tie, the previous winner continues to go first.'
+    puts "The first to #{TTTGame::PLAY_TO} wins!"
+    puts
+  end
+
+  # rubocop:disable Metrics/LineLength
+  def display_board
+    puts "#{human.name}: #{human.marker} -- #{computer.name}: #{computer.marker}"
+    puts
+    board.draw
+    puts
+  end
+  # rubocop:enable Metrics/LineLength
+
+  def clear
+    system 'clear'
+  end
+
+  def clear_screen_and_display_board
+    clear
+    display_board
+  end
+
+  def display_score
+    puts "#{human.name}'s score is: #{human.score}"
+    puts "#{computer.name}'s score is: #{computer.score}"
+  end
+
+  def pause_for_input
+    puts
+    puts "Hit 'return' key to continue."
+    gets.chomp
+  end
+
+  def display_round_winner
+    case board.winning_marker
+    when human.marker
+      puts "#{human.name} won this round!"
+    when computer.marker
+      puts "#{computer.name} won this round!"
+    else
+      puts "It's a tie!"
+    end
+  end
+
+  def display_game_winner
+    if human.score == TTTGame::PLAY_TO
+      puts
+      puts "#{human.name} won the game!"
+      puts
+    elsif computer.score == TTTGame::PLAY_TO
+      puts
+      puts "#{computer.name} won the game!"
+      puts
+    end
+  end
+
+  def display_play_again_message
+    puts "Let's play again!"
+    puts
+  end
+
+  def display_goodbye_message
+    puts 'Thanks for playing Tic Tac Toe! Goodbye!'
+  end
+end
+
 # Board Class
 class Board
   WINNING_LINES = [[1, 2, 3], [4, 5, 6], [7, 8, 9]] + # rows
@@ -201,84 +279,6 @@ class Computer < Player
     else
       board[board.unmarked_keys.sample] = @marker
     end
-  end
-end
-
-# TTT_Displayable Module
-module TTTDisplayable
-  def display_welcome_message
-    puts 'Welcome to Tic Tac Toe!'
-    puts
-  end
-
-  def display_rules
-    puts 'Rules:'
-    puts 'X starts by going first.'
-    puts 'The winner goes first the following round.'
-    puts 'In the event of a tie, the previous winner continues to go first.'
-    puts "The first to #{TTTGame::PLAY_TO} wins!"
-    puts
-  end
-
-  # rubocop:disable Metrics/LineLength
-  def display_board
-    puts "#{human.name}: #{human.marker} -- #{computer.name}: #{computer.marker}"
-    puts
-    board.draw
-    puts
-  end
-  # rubocop:enable Metrics/LineLength
-
-  def clear
-    system 'clear'
-  end
-
-  def clear_screen_and_display_board
-    clear
-    display_board
-  end
-
-  def display_score
-    puts "#{human.name}'s score is: #{human.score}"
-    puts "#{computer.name}'s score is: #{computer.score}"
-  end
-
-  def pause_for_input
-    puts
-    puts "Hit 'return' key to continue."
-    gets.chomp
-  end
-
-  def display_round_winner
-    case board.winning_marker
-    when human.marker
-      puts "#{human.name} won this round!"
-    when computer.marker
-      puts "#{computer.name} won this round!"
-    else
-      puts "It's a tie!"
-    end
-  end
-
-  def display_game_winner
-    if human.score == TTTGame::PLAY_TO
-      puts
-      puts "#{human.name} won the game!"
-      puts
-    elsif computer.score == TTTGame::PLAY_TO
-      puts
-      puts "#{computer.name} won the game!"
-      puts
-    end
-  end
-
-  def display_play_again_message
-    puts "Let's play again!"
-    puts
-  end
-
-  def display_goodbye_message
-    puts 'Thanks for playing Tic Tac Toe! Goodbye!'
   end
 end
 
