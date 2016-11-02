@@ -18,7 +18,6 @@ class Board
   end
 
   # rubocop:disable Metrics/AbcSize
-  # rubocop:disable Metrics/MethodLength
   def draw
     puts '     |     |'
     puts "  #{@squares[1]}  |  #{@squares[2]}  |  #{@squares[3]}"
@@ -33,7 +32,6 @@ class Board
     puts '     |     |'
   end
   # rubocop:enable Metrics/AbcSize
-  # rubocop:enable Metrics/MethodLength
 
   def []=(key, marker)
     @squares[key].marker = marker
@@ -60,10 +58,8 @@ class Board
     nil
   end
 
-  # rubocop:disable Metrics/MethodLength
   def at_risk_marker_and_square
-    # Returns a hash with the at risk marker and square
-    at_risk_marker = {}
+    at_risk_hash = {}
     WINNING_LINES.each do |line|
       square = @squares.values_at(*line)
       next unless at_risk(square)
@@ -72,11 +68,10 @@ class Board
       line.each do |sq|
         value = sq if @squares[sq].unmarked?
       end
-      at_risk_marker[key] = value
+      at_risk_hash[key] = value
     end
-    at_risk_marker
+    at_risk_hash
   end
-  # rubocop:enable Metrics/MethodLength
 
   def at_risk_squares
     WINNING_LINES.each do |line|
@@ -133,10 +128,13 @@ end
 
 # Player Class
 class Player
+  AVAILABLE_MARKERS = %w(X O).freeze
+  include Joinable
+
   attr_reader :score
   attr_accessor :marker, :name
 
-  def initialize(marker)
+  def initialize(marker = ' ')
     @marker = marker
     @score = 0
   end
@@ -150,94 +148,77 @@ class Player
   end
 end
 
-# TTTGame Class
-# rubocop:disable Metrics/ClassLength
-class TTTGame
-  AVAILABLE_MARKERS = %w(X O).freeze
-  X_MARKER = 'X'.freeze
-  O_MARKER = 'O'.freeze
-  FIRST_TO_MOVE = X_MARKER
-  PLAY_TO = 5
-
-  attr_reader :board, :human, :computer
-  attr_accessor :turn, :human_marker, :computer_marker, :current_marker
-
-  include Joinable
-
-  def initialize
-    @board = Board.new
-    @human = Player.new(X_MARKER)
-    @computer = Player.new(O_MARKER)
-    @current_marker = FIRST_TO_MOVE
-  end
-
-  # rubocop:disable Metrics/MethodLength
-  # rubocop:disable Metrics/AbcSize
-  def play
-    clear
-    display_welcome_message
-    set_names
-
-    loop do # Play again loop
-      choose_marker
-      clear
-      loop do # To 5 loop
-        display_board
-        loop do
-          current_player_moves
-          break if board.someone_won? || board.full?
-          clear_screen_and_display_board if human_turn?
-        end
-        increment_score
-        display_round_winner
-        display_score
-        break if num_of_wins?
-        pause_for_input
-        reset_round
-      end # End to 5 loop
-      display_game_winner
-      break unless play_again?
-      reset_game
-      display_play_again_message
-    end # End play again loop
-    display_goodbye_message
-  end
-  # rubocop:enable Metrics/MethodLength
-  # rubocop:enable Metrics/AbcSize
-
-  private
-
-  def display_welcome_message
-    puts 'Weclome to Tic Tac Toe!'
-    puts ''
-  end
-
-  def display_goodbye_message
-    puts 'Thanks for playing Tic Tac Toe! Goodbye!'
-  end
-
-  def set_names
+# Human Class
+class Human < Player
+  def set_name
     loop do
-      puts 'What is you name?'
-      human.name = gets.chomp
-      break if human.name != ' '
+      puts 'What is your name?'
+      @name = gets.chomp
+      break unless @name.strip.empty?
       puts "How will I know who you are if you don't enter your name?"
     end
-    computer.name = ['R2D2', 'Hal', 'Chappie', 'Sonny', 'Number 5'].sample
   end
 
-  # rubocop:disable Metrics/AbcSize
   def choose_marker
     loop do
-      puts 'Would you like to be X or O? X goes first.'
-      human.marker = gets.chomp.upcase
-      break if AVAILABLE_MARKERS.include?(human.marker)
-      puts "Than's not a valid choice. Pleas put X or O."
+      puts 'Would you like to be X or O?'
+      @marker = gets.chomp.upcase
+      break if AVAILABLE_MARKERS.include?(@marker)
+      puts "Than's not a valid choice."
     end
-    computer.marker = 'O' if human.marker == 'X'
-    computer.marker = 'X' if human.marker == 'O'
   end
-  # rubocop:enable Metrics/AbcSize
+
+  def move(board)
+    puts "Choose a square #{joinor(board.unmarked_keys)}: "
+    square = nil
+    loop do
+      square = gets.chomp.to_i
+      break if board.unmarked_keys.include?(square)
+      puts "Sorry, that's not a valid choice."
+    end
+    board[square] = @marker
+  end
+end
+
+# Computer Class
+class Computer < Player
+  def set_name
+    @name = ['R2D2', 'Hal', 'Chappie', 'Sonny', 'Number 5'].sample
+  end
+
+  def choose_marker(other_player)
+    @marker = 'O' if other_player.marker == 'X'
+    @marker = 'X' if other_player.marker == 'O'
+  end
+
+  def move(board, human)
+    if board.at_risk_marker_and_square.include?(@marker)
+      board[board.at_risk_marker_and_square[@marker]] = @marker
+    elsif board.at_risk_marker_and_square.include?(human.marker)
+      board[board.at_risk_marker_and_square[human.marker]] = @marker
+    elsif board.unmarked_keys.include?(5)
+      board[5] = @marker
+    else
+      board[board.unmarked_keys.sample] = @marker
+    end
+  end
+end
+
+# TTT_Displayable Module
+module TTTDisplayable
+  def display_welcome_message
+    puts 'Welcome to Tic Tac Toe!'
+    puts
+  end
+
+  def display_rules
+    puts 'Rules:'
+    puts 'X starts by going first.'
+    puts 'The winner goes first the following round.'
+    puts 'In the event of a tie, the previous winner continues to go first.'
+    puts "The first to #{TTTGame::PLAY_TO} wins!"
+    puts
+  end
 
   # rubocop:disable Metrics/LineLength
   def display_board
@@ -248,46 +229,28 @@ class TTTGame
   end
   # rubocop:enable Metrics/LineLength
 
+  def clear
+    system 'clear'
+  end
+
   def clear_screen_and_display_board
     clear
     display_board
   end
 
-  # rubocop:disable Metrics/AbcSize
-  def human_moves
-    puts "Choose a square #{joinor(board.unmarked_keys)}: "
-    square = nil
-    loop do
-      square = gets.chomp.to_i
-      break if board.unmarked_keys.include?(square)
-      puts "Sorry, that's not a valid choice."
-    end
-    board[square] = human.marker
+  def display_score
+    puts "#{human.name}'s score is: #{human.score}"
+    puts "#{computer.name}'s score is: #{computer.score}"
   end
 
-  def computer_moves
-    # Offence
-    if board.at_risk_marker_and_square.include?(computer.marker)
-      board[board.at_risk_marker_and_square[computer.marker]] = computer.marker
-    # Defence
-    elsif board.at_risk_marker_and_square.include?(human.marker)
-      board[board.at_risk_marker_and_square[human.marker]] = computer.marker
-    # Choose center
-    elsif board.unmarked_keys.include?(5)
-      board[5] = computer.marker
-    else
-      board[board.unmarked_keys.sample] = computer.marker
-    end
-  end
-  # rubocop:enable Metrics/AbcSize
-
-  def round_winner
-    board.winning_marker
+  def pause_for_input
+    puts
+    puts "Hit 'return' key to continue."
+    gets.chomp
   end
 
   def display_round_winner
-    clear_screen_and_display_board
-    case round_winner
+    case board.winning_marker
     when human.marker
       puts "#{human.name} won this round!"
     when computer.marker
@@ -297,19 +260,93 @@ class TTTGame
     end
   end
 
-  # rubocop:disable Metrics/AbcSize
   def display_game_winner
-    if human.score == PLAY_TO
+    if human.score == TTTGame::PLAY_TO
       puts
       puts "#{human.name} won the game!"
       puts
-    elsif computer.score == PLAY_TO
+    elsif computer.score == TTTGame::PLAY_TO
       puts
       puts "#{computer.name} won the game!"
       puts
     end
   end
-  # rubocop:enable Metrics/AbcSize
+
+  def display_play_again_message
+    puts "Let's play again!"
+    puts
+  end
+
+  def display_goodbye_message
+    puts 'Thanks for playing Tic Tac Toe! Goodbye!'
+  end
+end
+
+# TTTGame Class
+class TTTGame
+  X_MARKER = 'X'.freeze
+  O_MARKER = 'O'.freeze
+  FIRST_TO_MOVE = X_MARKER
+  PLAY_TO = 5
+
+  attr_reader :board, :human, :computer
+  attr_accessor :turn, :human_marker, :computer_marker, :current_marker
+
+  include TTTDisplayable
+
+  def initialize
+    @board = Board.new
+    @human = Human.new
+    @computer = Computer.new
+    @current_marker = FIRST_TO_MOVE
+  end
+
+  def play
+    clear
+    display_welcome_message
+    display_rules
+    human.set_name
+    computer.set_name
+    game_loop
+    display_goodbye_message
+  end
+
+  private
+
+  def alternate_moves
+    loop do
+      current_player_moves
+      break if board.someone_won? || board.full?
+      clear_screen_and_display_board if human_turn?
+    end
+  end
+
+  def round_loop
+    loop do
+      display_board
+      alternate_moves
+      increment_score
+      clear_screen_and_display_board
+      display_round_winner
+      display_score
+      break if num_of_wins?
+      pause_for_input
+      reset_round
+    end
+  end
+
+  def game_loop
+    loop do
+      human.choose_marker
+      computer.choose_marker(human)
+      clear
+      round_loop
+      display_game_winner
+      break unless play_again?
+      reset_game
+      display_play_again_message
+    end
+  end
 
   def increment_score
     case board.winning_marker
@@ -318,11 +355,6 @@ class TTTGame
     when computer.marker
       computer.add_score
     end
-  end
-
-  def display_score
-    puts "#{human.name}'s score is: #{human.score}"
-    puts "#{computer.name}'s score is: #{computer.score}"
   end
 
   def change_current_marker
@@ -334,9 +366,9 @@ class TTTGame
   end
 
   def winner_goes_first
-    if round_winner == human.marker
+    if board.winning_marker == human.marker
       @current_marker = human.marker
-    elsif round_winner == computer.marker
+    elsif board.winning_marker == computer.marker
       @current_marker = computer.marker
     else
       change_current_marker
@@ -345,12 +377,6 @@ class TTTGame
 
   def num_of_wins?
     computer.score == PLAY_TO || human.score == PLAY_TO
-  end
-
-  def pause_for_input
-    puts
-    puts "Hit 'return' key to continue."
-    gets.chomp
   end
 
   def play_again?
@@ -362,10 +388,6 @@ class TTTGame
       puts 'Sorry, must be y or n'
     end
     answer == 'y'
-  end
-
-  def clear
-    system 'clear'
   end
 
   def reset_round
@@ -386,18 +408,12 @@ class TTTGame
     computer.reset_score
   end
 
-  def display_play_again_message
-    puts "Let's play again!"
-    puts
-  end
-
   def current_player_moves
     if @current_marker == human.marker
-      human_moves
+      human.move(board)
       @current_marker = computer.marker
-
     else
-      computer_moves
+      computer.move(board, human)
       @current_marker = human.marker
     end
   end
@@ -406,9 +422,6 @@ class TTTGame
     @current_marker == human.marker
   end
 end
-# rubocop:enable Metrics/ClassLength
-
-# Start the game
 
 game = TTTGame.new
 game.play
