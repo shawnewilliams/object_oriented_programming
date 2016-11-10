@@ -1,15 +1,57 @@
-require 'pry'
+# TwentyOneDisplayable Module
+module TwentyOneDisplayable
+  def display_welcome_message
+    puts 'Welcome to 21!'
+  end
 
-module Joinable
-  def joinor(array, word)
-    new_array = []
-    array.each do |element|
-      new_array << element.join(" #{word} ")
+  def display_dealing_message
+    clear
+    puts "Dealing"
+    sleep(0.3)
+    clear
+    puts "Dealing."
+    sleep(0.3)
+    clear
+    puts "Dealing.."
+    sleep(0.3)
+    clear
+    puts "Dealing..."
+  end
+
+  def display_goodbye_message
+    puts 'Thanks for playing 21! Goodbye!'
+  end
+
+  def display_winner
+    clear
+    puts '--- Result ---'
+    sleep(1)
+    puts
+    display_cards_and_totals
+    case won?
+    when :human_busted
+      puts "*** #{@human.name} Busted. #{@computer.name} WINS! ***"
+    when :computer_busted
+      puts "*** #{@computer.name} Busted. #{@human.name} WINS! ***"
+    when :computer
+      puts "*** #{@computer.name} WINS! ***"
+    when :human
+      puts "*** #{@human.name} WINS! ***"
+    when :tie
+      puts "*** Its a TIE. ***"
     end
-    new_array
+    puts
+  end
+
+  def display_cards_and_totals
+    @computer.display_hand
+    puts
+    @human.display_hand
+    puts
   end
 end
 
+# Player Class
 class Player
   MAX = 21
   MIN = 17
@@ -20,6 +62,17 @@ class Player
     @stay = false
     @bet = 0
     @money = 100
+  end
+
+  def set_name
+    name = nil
+    loop do
+      puts 'What is your name?'
+      name = gets.chomp
+      break unless name.strip.empty?
+      puts "How do I know who you are if you don't tell me?"
+    end
+    @name = name
   end
 
   def hit(card)
@@ -50,6 +103,12 @@ class Player
     @total
   end
 
+  def display_hand
+    puts "--- #{@name}'s hand ---"
+    @hand.each { |num, suit| puts "=> #{num} of #{suit}" }
+    puts "=> Total: #{total}"
+  end
+
   def place_bet
     bet = 0
     loop do
@@ -62,11 +121,12 @@ class Player
   end
 
   def add_bet
-    if @total == MAX
-      @money += @bet * 2
-    else
-      @money += @bet
-    end
+    @money += case @total
+              when MAX
+                @bet * 2
+              else
+                @bet
+              end
   end
 
   def subtract_bet
@@ -79,6 +139,7 @@ class Player
   end
 end
 
+# Computer Class
 class Computer < Player
   def initialize
     @hand = []
@@ -86,17 +147,14 @@ class Computer < Player
   end
 
   def total_showing
-    @total_showing = 0
-    @hand.each do |card|
-      if Deck::CARDS.keys.include?(card[0])
-        @total_showing += Deck::CARDS[card[0]]
-      end
-    end
-    @total_showing -= Deck::CARDS[@hand[-1][0]]
-    if @total_showing > MAX && @hand[0...-1].flatten.include?("Ace")
-      @total_showing -= 10
-    end
-    @total_showing
+    @total_showing = hand.first[0]
+  end
+
+  def display_showing
+    puts "--- #{@name}'s hand ---"
+    puts "=> #{hand.first[0]} of #{hand.first[1]}"
+    puts "=> ???"
+    puts "=> Total: #{total_showing}"
   end
 
   def stay?
@@ -147,6 +205,7 @@ class Deck
   end
 end
 
+# Card Class
 class Card
   attr_accessor :card
 
@@ -156,9 +215,10 @@ class Card
   end
 end
 
-class Game
+# Game Class
+class TwentyOneGame
   attr_accessor :human, :computer, :deck
-  include Joinable
+  include TwentyOneDisplayable
 
   def initialize
     @human = Player.new
@@ -169,17 +229,17 @@ class Game
   def play
     clear
     display_welcome_message
-    choose_name
+    @human.set_name
     loop do
       @human.place_bet
       display_dealing_message
       deal_cards
+      display_deal
       player_turn_loop
       computer_turn
       display_winner
       settle_bet
-      @human.reset
-      @computer.reset
+      reset
       break if broke?
       break unless play_again?
       system 'clear'
@@ -192,61 +252,21 @@ class Game
     system 'clear'
   end
 
-  def choose_name
-    name = nil
-    loop do
-      puts 'What is your name?'
-      name = gets.chomp
-      break unless name.strip.empty?
-      puts "How do I know who you are if you don't tell me?"
-    end
-    human.name = name
-  end
-
-  def display_welcome_message
-    puts 'Welcome to 21!'
-  end
-
-  def display_goodbye_message
-    puts 'Thanks for playing 21! Goodbye!'
-  end
-
   def deal_cards
-    deck.deal(@human)
-    deck.deal(@human)
-    deck.deal(@computer)
-    deck.deal(@computer)
-    sleep(1)
+    2.times do
+      deck.deal(@human)
+      deck.deal(@computer)
+    end
+  end
+
+  def display_deal
+    sleep(0.5)
     puts
-    computer_display_showing
-    computer_display_total_showing
-    sleep(1)
+    @computer.display_showing
+    sleep(0.5)
     puts
-    display_cards(@human)
-    display_total(@human)
+    human.display_hand
     puts
-  end
-
-  def display_dealing_message
-    puts "Dealing..."
-  end
-
-  def display_cards(player)
-    puts "#{player.name}'s cards: - " \
-         "#{joinor(player.hand, 'of').join(' - ')}"
-  end
-
-  def display_total(player)
-    puts "#{player.name}'s total: #{player.total}"
-  end
-
-  def computer_display_showing
-    puts "#{@computer.name} cards showing: - " \
-         "#{joinor(@computer.hand, 'of')[0...-1].join(' - ')}"
-  end
-
-  def computer_display_total_showing
-    puts "#{@computer.name} total showing: #{@computer.total_showing}"
   end
 
   def player_turn
@@ -254,6 +274,7 @@ class Game
     loop do
       puts "Would you like to hit (h) or stay (s)?"
       choice = gets.chomp.downcase
+      clear
       break if ['h', 's'].include?(choice)
       puts "That's not a valid choice."
     end
@@ -261,8 +282,7 @@ class Game
       puts "#{@human.name} hits!"
       puts
       @human.hit(Card.new(@deck))
-      display_cards(@human)
-      display_total(@human)
+      @human.display_hand
       puts
     elsif choice == 's'
       @human.stay = true
@@ -282,38 +302,25 @@ class Game
         break
       end
     end
+    sleep(1)
   end
 
   def computer_turn
     loop do
-      sleep(1)
       if @human.busted?
         break
       elsif @computer.busted?
         break
       elsif @computer.stay?
-        puts "#{@computer.name} stays!"
-        puts
         break
       else
-        puts "#{@computer.name} hits!"
-        puts
         @computer.hit(Card.new(@deck))
-        computer_display_showing
-        computer_display_total_showing
-        puts
       end
     end
   end
 
-  def pause_for_input
-    puts "Press enter to continue"
-    gets.chomp
-  end
-
   def won?
-    if @human.busted? &&
-       !@computer.busted?
+    if @human.busted?
       :human_busted
     elsif @computer.busted? &&
           !@human.busted?
@@ -327,37 +334,6 @@ class Game
     end
   end
 
-  def display_winner
-    puts 'Result------------------'
-    puts
-    sleep(1)
-    result = won?
-    case result
-    when :human_busted
-      puts "#{@human.name} Busted. #{@computer.name} WINS!"
-    when :computer_busted
-      puts "#{@computer.name} Busted. #{@human.name} WINS!"
-    when :computer
-      puts "#{@computer.name} WINS!"
-    when :human
-      puts "#{@human.name} WINS!"
-    when :tie
-      puts "Its a TIE."
-    end
-    sleep(1)
-    display_cards_and_totals
-  end
-
-  def display_cards_and_totals
-    puts
-    display_cards(@computer)
-    display_total(@computer)
-    puts
-    display_cards(@human)
-    display_total(@human)
-    puts
-  end
-
   def settle_bet
     result = won?
     if result == :human_busted || result == :computer
@@ -366,6 +342,11 @@ class Game
       @human.add_bet
     end
     puts "You have $#{@human.money}."
+  end
+
+  def reset
+    @human.reset
+    @computer.reset
   end
 
   def play_again?
@@ -388,4 +369,4 @@ class Game
   end
 end
 
-Game.new.play
+TwentyOneGame.new.play
