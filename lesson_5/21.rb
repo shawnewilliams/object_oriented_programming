@@ -5,21 +5,23 @@ module TwentyOneDisplayable
   end
 
   def display_dealing_message
-    clear
-    puts "Dealing"
-    sleep(0.3)
-    clear
-    puts "Dealing."
-    sleep(0.3)
-    clear
-    puts "Dealing.."
-    sleep(0.3)
-    clear
-    puts "Dealing..."
+    message = "Dealing"
+    4.times do
+      clear
+      puts message
+      message += '.'
+      sleep(0.3)
+    end
   end
 
-  def display_goodbye_message
-    puts 'Thanks for playing 21! Goodbye!'
+  def display_deal
+    sleep(0.2)
+    puts
+    @computer.display_showing
+    sleep(0.5)
+    puts
+    human.display_hand
+    puts
   end
 
   def display_winner
@@ -28,16 +30,15 @@ module TwentyOneDisplayable
     sleep(1)
     puts
     display_cards_and_totals
-    case won?
-    when :human_busted
+    if @human.busted?
       puts "*** #{@human.name} Busted. #{@computer.name} WINS! ***"
-    when :computer_busted
+    elsif @computer.busted?
       puts "*** #{@computer.name} Busted. #{@human.name} WINS! ***"
-    when :computer
+    elsif @computer.total > @human.total
       puts "*** #{@computer.name} WINS! ***"
-    when :human
+    elsif @human.total > @computer.total
       puts "*** #{@human.name} WINS! ***"
-    when :tie
+    elsif @human.total == @computer.total
       puts "*** Its a TIE. ***"
     end
     puts
@@ -49,12 +50,18 @@ module TwentyOneDisplayable
     @human.display_hand
     puts
   end
+
+  def display_goodbye_message
+    puts 'Thanks for playing 21! Goodbye!'
+    puts
+  end
 end
 
 # Player Class
 class Player
   MAX = 21
   MIN = 17
+  include TwentyOneDisplayable
 
   attr_accessor :name, :hand, :total, :stay, :bet, :money
   def initialize
@@ -120,6 +127,26 @@ class Player
     @bet = bet.to_i
   end
 
+  def hit_or_stay?(deck)
+    choice = nil
+    loop do
+      puts "Would you like to hit (h) or stay (s)?"
+      choice = gets.chomp.downcase
+      system 'clear'
+      break if ['h', 's'].include?(choice)
+      puts "That's not a valid choice."
+    end
+    if choice == 'h'
+      puts "#{@name} hits!"
+      puts
+      hit(Card.new(deck))
+      display_hand
+      puts
+    elsif choice == 's'
+      @stay = true
+    end
+  end
+
   def add_bet
     @money += case @total
               when MAX
@@ -147,7 +174,7 @@ class Computer < Player
   end
 
   def total_showing
-    @total_showing = hand.first[0]
+    @total_showing = Deck::CARDS[hand.first[0]]
   end
 
   def display_showing
@@ -191,7 +218,7 @@ class Deck
     deck
   end
 
-  def deck_empty?
+  def empty?
     if @cards.empty?
       puts "Time to shuffle!"
       @cards = shuffle
@@ -199,7 +226,7 @@ class Deck
   end
 
   def deal(player)
-    deck_empty?
+    empty?
     player.hand.push(@cards.sample)
     @cards.delete(player.hand[-1])
   end
@@ -210,7 +237,7 @@ class Card
   attr_accessor :card
 
   def initialize(deck)
-    deck.deck_empty?
+    deck.empty?
     @card = deck.cards.delete_at(deck.cards.find_index(deck.cards.sample))
   end
 end
@@ -235,14 +262,14 @@ class TwentyOneGame
       display_dealing_message
       deal_cards
       display_deal
-      player_turn_loop
+      player_turn
       computer_turn
       display_winner
       settle_bet
       reset
       break if broke?
       break unless play_again?
-      system 'clear'
+      clear
     end
     display_goodbye_message
     # show_result
@@ -259,39 +286,9 @@ class TwentyOneGame
     end
   end
 
-  def display_deal
-    sleep(0.5)
-    puts
-    @computer.display_showing
-    sleep(0.5)
-    puts
-    human.display_hand
-    puts
-  end
-
   def player_turn
-    choice = nil
     loop do
-      puts "Would you like to hit (h) or stay (s)?"
-      choice = gets.chomp.downcase
-      clear
-      break if ['h', 's'].include?(choice)
-      puts "That's not a valid choice."
-    end
-    if choice == 'h'
-      puts "#{@human.name} hits!"
-      puts
-      @human.hit(Card.new(@deck))
-      @human.display_hand
-      puts
-    elsif choice == 's'
-      @human.stay = true
-    end
-  end
-
-  def player_turn_loop
-    loop do
-      player_turn
+      @human.hit_or_stay?(@deck)
       if @human.busted?
         puts "#{@human.name} busted!"
         puts
@@ -307,38 +304,28 @@ class TwentyOneGame
 
   def computer_turn
     loop do
-      if @human.busted?
-        break
-      elsif @computer.busted?
+      break if @human.busted
+      if @computer.busted?
+        puts "#{@computer.name} busted!"
+        sleep(1)
         break
       elsif @computer.stay?
+        puts "#{@computer.name} stays!"
+        sleep(1)
         break
       else
         @computer.hit(Card.new(@deck))
+        puts "#{@computer.name} hits!"
+        sleep(1)
       end
-    end
-  end
-
-  def won?
-    if @human.busted?
-      :human_busted
-    elsif @computer.busted? &&
-          !@human.busted?
-      :computer_busted
-    elsif @human.total > @computer.total
-      :human
-    elsif @computer.total > @human.total
-      :computer
-    else
-      :tie
+      puts
     end
   end
 
   def settle_bet
-    result = won?
-    if result == :human_busted || result == :computer
+    if @human.busted?
       @human.subtract_bet
-    elsif result == :computer_busted || result == :human
+    elsif @computer.busted? || @human.total > @computer.total
       @human.add_bet
     end
     puts "You have $#{@human.money}."
@@ -363,6 +350,7 @@ class TwentyOneGame
   def broke?
     if @human.money == 0
       puts "Sorry, I have all your money. Better luck next time."
+      puts
       return true
     end
     false
