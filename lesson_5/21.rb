@@ -4,6 +4,10 @@ module TwentyOneDisplayable
     puts 'Welcome to 21!'
   end
 
+  def clear
+    system 'clear'
+  end
+
   def display_dealing_message
     message = "Dealing"
     4.times do
@@ -24,6 +28,8 @@ module TwentyOneDisplayable
     puts
   end
 
+  # rubocop:disable Metrics/MethodLength
+  # rubocop:disable Metrics/AbcSize
   def display_winner
     clear
     puts '--- Result ---'
@@ -43,6 +49,8 @@ module TwentyOneDisplayable
     end
     puts
   end
+  # rubocop:enable Metrics/MethodLength
+  # rubocop:enable Metrics/AbcSize
 
   def display_cards_and_totals
     @computer.display_hand
@@ -127,12 +135,13 @@ class Player
     @bet = bet.to_i
   end
 
+  # rubocop:disable Metrics/MethodLength
   def hit_or_stay?(deck)
     choice = nil
     loop do
       puts "Would you like to hit (h) or stay (s)?"
       choice = gets.chomp.downcase
-      system 'clear'
+      clear
       break if ['h', 's'].include?(choice)
       puts "That's not a valid choice."
     end
@@ -146,6 +155,7 @@ class Player
       @stay = true
     end
   end
+  # rubocop:enable Metrics/MethodLength
 
   def add_bet
     @money += case @total
@@ -257,6 +267,19 @@ class TwentyOneGame
     clear
     display_welcome_message
     @human.set_name
+    game_loop
+    display_goodbye_message
+    # show_result
+  end
+
+  def deal_cards
+    2.times do
+      deck.deal(@human)
+      deck.deal(@computer)
+    end
+  end
+
+  def game_loop
     loop do
       @human.place_bet
       display_dealing_message
@@ -270,19 +293,6 @@ class TwentyOneGame
       break if broke?
       break unless play_again?
       clear
-    end
-    display_goodbye_message
-    # show_result
-  end
-
-  def clear
-    system 'clear'
-  end
-
-  def deal_cards
-    2.times do
-      deck.deal(@human)
-      deck.deal(@computer)
     end
   end
 
@@ -302,9 +312,10 @@ class TwentyOneGame
     sleep(1)
   end
 
+  # rubocop:disable Metrics/MethodLength
   def computer_turn
     loop do
-      break if @human.busted
+      break if @human.busted?
       if @computer.busted?
         puts "#{@computer.name} busted!"
         sleep(1)
@@ -321,9 +332,10 @@ class TwentyOneGame
       puts
     end
   end
+  # rubocop:enable Metrics/MethodLength
 
   def settle_bet
-    if @human.busted?
+    if @human.busted? || @human.total < @computer.total && !@computer.busted?
       @human.subtract_bet
     elsif @computer.busted? || @human.total > @computer.total
       @human.add_bet
