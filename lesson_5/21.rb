@@ -1,4 +1,3 @@
-# TwentyOneDisplayable Module
 module TwentyOneDisplayable
   def display_welcome_message
     puts 'Welcome to 21!'
@@ -6,6 +5,7 @@ module TwentyOneDisplayable
 
   def clear
     system 'clear'
+    system 'cls'
   end
 
   def display_dealing_message
@@ -65,7 +65,6 @@ module TwentyOneDisplayable
   end
 end
 
-# Player Class
 class Player
   MAX = 21
   MIN = 17
@@ -176,7 +175,6 @@ class Player
   end
 end
 
-# Computer Class
 class Computer < Player
   def initialize
     @hand = []
@@ -199,7 +197,6 @@ class Computer < Player
   end
 end
 
-# Deck Class
 class Deck
   CARDS = { "2" => 2, "3" => 3, "4" => 4, "5" => 5, "6" => 6, +
             "7" => 7, "8" => 8, "9" => 9, "10" => 10, "Jack" => 10, +
@@ -242,7 +239,6 @@ class Deck
   end
 end
 
-# Card Class
 class Card
   attr_accessor :card
 
@@ -252,7 +248,6 @@ class Card
   end
 end
 
-# Game Class
 class TwentyOneGame
   attr_accessor :human, :computer, :deck
   include TwentyOneDisplayable
@@ -290,8 +285,7 @@ class TwentyOneGame
       display_winner
       settle_bet
       reset
-      break if broke?
-      break unless play_again?
+      break if broke? || !play_again?
       clear
     end
   end
@@ -318,17 +312,15 @@ class TwentyOneGame
       break if @human.busted?
       if @computer.busted?
         puts "#{@computer.name} busted!"
-        sleep(1)
         break
       elsif @computer.stay?
         puts "#{@computer.name} stays!"
-        sleep(1)
         break
       else
         @computer.hit(Card.new(@deck))
         puts "#{@computer.name} hits!"
-        sleep(1)
       end
+      sleep(1)
       puts
     end
   end
